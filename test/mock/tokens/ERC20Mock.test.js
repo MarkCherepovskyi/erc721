@@ -47,3 +47,5 @@ describe("ERC20Mock", () => {
     });
   });
 });
+
+// todo update token
