@@ -25,15 +25,20 @@ contract MyToken is ERC721, ERC721Enumerable, ERC721URIStorage {
         return "ipfs://";
     }
 
-    function safeMint(address to, string memory uri) public onlyOwner {
+    function safeMint(address to, string memory uri) public onlyOwner returns (uint256) {
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, uri);
+        return tokenId;
     }
 
     function transferToken(address from, address to, uint tokenId) external onlyOwner {
         transferFrom(from, to, tokenId);
+    }
+
+    function transferFrom(address from, address to, uint256 tokenId) public override onlyOwner {
+        _transfer(from, to, tokenId);
     }
 
     function _safeMint(address to, uint256 tokenId, bytes memory data) internal override(ERC721) {
