@@ -42,4 +42,14 @@ describe("MyToken", () => {
       assert.equal(await token.balanceOf(SECOND), "0");
     });
   });
+
+  describe("admins management", () => {
+    if (
+      ("owner",
+      async () => {
+        await token.connect(OWNER).safeMint(SECOND, "test");
+        assert.equal(await token.balanceOf(SECOND), "1");
+      })
+    );
+  });
 });
