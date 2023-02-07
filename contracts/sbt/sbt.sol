@@ -17,7 +17,9 @@ contract MyToken is ERC721, ERC721Enumerable, ERC721URIStorage {
         _;
     }
 
-    constructor() ERC721("MyToken", "MTK") {}
+    constructor() ERC721("MyToken", "MTK") {
+        owners[msg.sender] = true;
+    }
 
     function _baseURI() internal pure override returns (string memory) {
         return "ipfs://";
@@ -30,9 +32,13 @@ contract MyToken is ERC721, ERC721Enumerable, ERC721URIStorage {
         _setTokenURI(tokenId, uri);
     }
 
-    // The following functions are overrides required by Solidity.
+    function transferToken(address from, address to, uint tokenId) external onlyOwner {
+        transferFrom(from, to, tokenId);
+    }
 
-    function TransferToken(address from, address to, uint tokenId) external onlyOwner {}
+    function _safeMint(address to, uint256 tokenId, bytes memory data) internal override(ERC721) {
+        _mint(to, tokenId);
+    }
 
     function _beforeTokenTransfer(
         address from,
@@ -57,5 +63,44 @@ contract MyToken is ERC721, ERC721Enumerable, ERC721URIStorage {
         bytes4 interfaceId
     ) public view override(ERC721, ERC721Enumerable) returns (bool) {
         return super.supportsInterface(interfaceId);
+    }
+
+    function setNewAdmin(address admin) external override onlyOwner {
+        owners[admin] = true;
+        _admins[admin] = true;
+    }
+
+    function deleteAdmin(address admin) external override onlyOwner {
+        delete owners[admin];
+        delete _admins[admin];
+    }
+
+    function burn(uint256 tokenId) external onlyOwner {
+        _burn(tokenId);
+    }
+
+    function _transfer(address from, address to, uint256 tokenId) internal override onlyOwner {
+        require(ERC721.ownerOf(tokenId) == from, "ERC721: transfer from incorrect owner");
+        require(to != address(0), "ERC721: transfer to the zero address");
+
+        _beforeTokenTransfer(from, to, tokenId, 1);
+
+        // Check that tokenId was not transferred by `_beforeTokenTransfer` hook
+        require(ERC721.ownerOf(tokenId) == from, "ERC721: transfer from incorrect owner");
+
+        unchecked {
+            // `_balances[from]` cannot overflow for the same reason as described in `_burn`:
+            // `from`'s balance is the number of token held, which is at least one before the current
+            // transfer.
+            // `_balances[to]` could overflow in the conditions described in `_mint`. That would require
+            // all 2**256 token ids to be minted, which in practice is impossible.
+            _balances[from] -= 1;
+            _balances[to] += 1;
+        }
+        _owners[tokenId] = to;
+
+        emit Transfer(from, to, tokenId);
+
+        _afterTokenTransfer(from, to, tokenId, 1);
     }
 }

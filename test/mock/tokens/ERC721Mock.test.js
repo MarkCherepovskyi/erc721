@@ -1,51 +1,45 @@
 const { accounts, wei } = require("../../../scripts/utils/utils");
 const { assert } = require("chai");
 
-const ERC20Mock = artifacts.require("ERC20Mock");
+const MyToken = artifacts.require("MyToken");
 
-describe("ERC20Mock", () => {
+describe("MyToken", () => {
   let OWNER;
   let SECOND;
-
   let token;
 
   before(async () => {
     OWNER = await accounts(0);
     SECOND = await accounts(1);
+    console.log(OWNER, " ", SECOND);
   });
 
   beforeEach("setup", async () => {
-    token = await ERC20Mock.new("Mock", "Mock", 18);
+    token = await MyToken.new();
   });
 
   describe("constructor", () => {
     it("should set parameters correctly", async () => {
-      assert.equal(await token.name(), "Mock");
-      assert.equal(await token.symbol(), "Mock");
-      assert.equal(await token.decimals(), 18);
+      assert.equal(await token.name(), "MyToken");
+      assert.equal(await token.symbol(), "MTK");
     });
   });
 
-  describe("mint", () => {
+  describe("safeMint", () => {
     it("should mint correctly", async () => {
       assert.equal(await token.balanceOf(SECOND), "0");
-
-      await token.mint(SECOND, wei("1000"));
-
-      assert.equal(await token.balanceOf(SECOND), wei("1000"));
+      await token.safeMint(SECOND, "test");
+      assert.equal(await token.tokenURI(0), "test");
+      assert.equal(await token.balanceOf(SECOND), "1");
     });
   });
 
   describe("burn", () => {
     it("should burn correctly", async () => {
+      await token.safeMint(SECOND, "test");
+      await token.burn(0);
+      console.log(await token.balanceOf(SECOND), "te");
       assert.equal(await token.balanceOf(SECOND), "0");
-
-      await token.mint(SECOND, wei("1000"));
-      await token.burn(SECOND, wei("500"));
-
-      assert.equal(await token.balanceOf(SECOND), wei("500"));
     });
   });
 });
-
-// todo update token

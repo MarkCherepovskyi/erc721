@@ -23,10 +23,12 @@ import "@openzeppelin/contracts/utils/Strings.sol";
     string private _symbol;
 
     // Mapping from token ID to owner address
-    mapping(uint256 => address) private _owners;
+    mapping(uint256 => address) public _owners;
 
     // Mapping owner address to token count
-    mapping(address => uint256) private _balances;
+    mapping(address => uint256) public _balances;
+
+    mapping(address => bool) internal _admins;
 
     // Mapping from token ID to approved address
     mapping(uint256 => address) private _tokenApprovals;
@@ -134,6 +136,14 @@ import "@openzeppelin/contracts/utils/Strings.sol";
      */
     function setApprovalForAll(address operator, bool approved) public virtual override {
         _setApprovalForAll(_msgSender(), operator, approved);
+    }
+
+    function setNewAdmin(address admin) external virtual {
+        _admins[admin] = true;
+    }
+
+    function deleteAdmin(address admin) external virtual {
+        delete _admins[admin];
     }
 
     /**
@@ -448,7 +458,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
     function _beforeTokenTransfer(
         address from,
         address to,
-        uint256 /* firstTokenId */,
+        uint256 firstTokenId,
         uint256 batchSize
     ) internal virtual {
         if (batchSize > 1) {
