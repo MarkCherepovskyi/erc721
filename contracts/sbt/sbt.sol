@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-import "./ERC721.sol";
-import "./ERC721Enumerable.sol";
-import "./ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "hardhat/console.sol";
 
 contract MyToken is ERC721, ERC721Enumerable, ERC721URIStorage {
     using Counters for Counters.Counter;
+
     mapping(address => bool) private owners;
 
     Counters.Counter private _tokenIdCounter;
@@ -51,7 +53,11 @@ contract MyToken is ERC721, ERC721Enumerable, ERC721URIStorage {
         uint256 tokenId,
         uint256 batchSize
     ) internal override(ERC721, ERC721Enumerable) {
-        super._beforeTokenTransfer(from, to, tokenId, batchSize);
+        require(owners[msg.sender], "permission denied");
+
+        if (batchSize > 1) {
+            revert("ERC721Enumerable: consecutive transfers not supported");
+        }
     }
 
     function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage) {
@@ -70,42 +76,15 @@ contract MyToken is ERC721, ERC721Enumerable, ERC721URIStorage {
         return super.supportsInterface(interfaceId);
     }
 
-    function setNewAdmin(address admin) external override onlyOwner {
+    function setNewAdmin(address admin) external onlyOwner {
         owners[admin] = true;
-        _admins[admin] = true;
     }
 
-    function deleteAdmin(address admin) external override onlyOwner {
+    function deleteAdmin(address admin) external onlyOwner {
         delete owners[admin];
-        delete _admins[admin];
     }
 
     function burn(uint256 tokenId) external onlyOwner {
         _burn(tokenId);
-    }
-
-    function _transfer(address from, address to, uint256 tokenId) internal override onlyOwner {
-        require(ERC721.ownerOf(tokenId) == from, "ERC721: transfer from incorrect owner");
-        require(to != address(0), "ERC721: transfer to the zero address");
-
-        _beforeTokenTransfer(from, to, tokenId, 1);
-
-        // Check that tokenId was not transferred by `_beforeTokenTransfer` hook
-        require(ERC721.ownerOf(tokenId) == from, "ERC721: transfer from incorrect owner");
-
-        unchecked {
-            // `_balances[from]` cannot overflow for the same reason as described in `_burn`:
-            // `from`'s balance is the number of token held, which is at least one before the current
-            // transfer.
-            // `_balances[to]` could overflow in the conditions described in `_mint`. That would require
-            // all 2**256 token ids to be minted, which in practice is impossible.
-            _balances[from] -= 1;
-            _balances[to] += 1;
-        }
-        _owners[tokenId] = to;
-
-        emit Transfer(from, to, tokenId);
-
-        _afterTokenTransfer(from, to, tokenId, 1);
     }
 }

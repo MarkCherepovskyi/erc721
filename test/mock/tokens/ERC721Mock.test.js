@@ -6,11 +6,13 @@ const MyToken = artifacts.require("MyToken");
 describe("MyToken", () => {
   let OWNER;
   let SECOND;
+  let FIFTY;
   let token;
 
   before(async () => {
     OWNER = await accounts(0);
     SECOND = await accounts(1);
+    FIFTY = await accounts(5);
     console.log(OWNER, " ", SECOND);
   });
 
@@ -29,7 +31,7 @@ describe("MyToken", () => {
     it("should mint correctly", async () => {
       assert.equal(await token.balanceOf(SECOND), "0");
       await token.safeMint(SECOND, "test");
-      assert.equal(await token.tokenURI(0), "test");
+      assert.equal(await token.tokenURI(0), "ipfs://test");
       assert.equal(await token.balanceOf(SECOND), "1");
     });
     // it("get token ID", async()=>{
@@ -76,9 +78,19 @@ describe("MyToken", () => {
   });
 
   describe("transfer", () => {
-    it("transfer", async () => {
+    it.only("transfer", async () => {
       await token.safeMint(SECOND, "test");
       await token.transferToken(SECOND, OWNER, 0), { from: OWNER };
+
+      assert.equal(await token.balanceOf(SECOND), "0");
+      assert.equal(await token.balanceOf(OWNER), "1");
+      await token.burn(0);
+    });
+  });
+  describe("transfer", () => {
+    it.only("transfer without permission", async () => {
+      await token.safeMint(SECOND, "test");
+      await token.transferToken(SECOND, OWNER, 0, { from: SECOND });
 
       assert.equal(await token.balanceOf(SECOND), "0");
       assert.equal(await token.balanceOf(OWNER), "1");
